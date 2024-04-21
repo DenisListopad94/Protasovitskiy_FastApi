@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Users</title>
+    <link href="{{ url_for('static', path='/css/users.css') }}" rel="stylesheet">
+</head>
+<body>
+    <h1>Users age 15-45</h1>
+    <ul>
+        {% for user in users %}
+            {% if 15 < user.age <= 45 %}
+                <li>{{user.id}},
+                {{user.first_name}}
+                {{user.last_name}},
+                {{user.age}},
+                {{user.email}}</li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+
+    <h2>Users with incorrect name</h2>
+    <ul>
+        {% for user in users %}
+            {% if not user.first_name.isalpha() or not user.last_name.isalpha() %}
+                <li>{{user.id}},
+                {{user.first_name}}
+                {{user.last_name}},
+                {{user.age}},
+                {{user.email}}</li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+    <img src="{{ url_for('static', path='/img/tolpa.jpg') }}">
+</body>
+</html>

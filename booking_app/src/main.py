@@ -1,91 +1,64 @@
-# 1.Создать пустую директорию с именем booking_app.
-# Создать и активировать виртуальное окружение.
-# Добавить файл .gitignore в пустую директорию.
-# Установить библиотеки fastapi, uvicorn, pydantic.
-# Создать файл requirements.txt добавить все установленные библиотеки.
-
-# 2.Создать директорию src .
-# Внутри директории создать файл c именем main.py .
-# Создать объект класса FastAPI() . Создать один эндпоинт с get запросом,
-# который будет возвращать список из 5 случайных чисел. Числа генерируются с помощью модуля random.
-from fastapi import FastAPI
-from pydantic import BaseModel, PositiveInt, Field
-import random
+# 1. Создать пустую в директории src два пакета auth и booking_app.
+# Создать внутри auth пакет routers, внутри пакета создать два питоновских файла base и  user_router.
+# Настроить роутинг и добавить созданный роутер в файл main.
+from fastapi import FastAPI, Request
+from src.auth.routers.base import router as auth_router
+from src.booking_app.routers.base import router as book_router
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
+app.include_router(auth_router)
+app.include_router(book_router)
+
+# 2. Создать директорию templates и добавить два html файла, users.html и base.html.
+# Установить модуль Jinja2 и добавить в файл requirements.txt.
+# Настроить использование шаблонов в модуле main.
+
+# 3. Создать эндпоинт для get запроса, которые вернёт шаблон users.html
+# и передаст в него данные из словаря в users, состоящего из 10 объектов.
+# Структура словаря users=[{“id”:1,”first_name”:”some_name”,
+# ”last_name”:”some_name”,”age”:23,”email”:”some_email”},{…}].
+# Для вывода данных о пользователях используйте тэг {% for %}{% endfor %}
+
+# 4. Используя шаблон users.html добавьте проверку на возраст.
+# Выведите пользователей старше 15 и младше 45.
+# А также отдельно выведите пользователей с некорректными именами и фамилиями
+# (если в них есть символы отличающиеся от латиницы или кириллицы).
+
+templates = Jinja2Templates(directory="templates")
 
 
-@app.get("/")
-def get_random_numbers():
-    random_numbers = [random.randint(1, 100) for number in range(5)]
-    return random_numbers
+@app.get("/get_template", response_class=HTMLResponse)
+def get_html_template(request: Request):
+    users = [
+        {"id": 1,
+         "first_name": "Bob1",
+         "last_name": "Bobson",
+         "age": 23,
+         "email": "Bob@mail.ru"},
+        {"id": 2,
+         "first_name": "Bill",
+         "last_name": "Billson",
+         "age": 50,
+         "email": "Bill@mail.ru"},
+        {"id": 3,
+         "first_name": "Will",
+         "last_name": "Willson",
+         "age": 45,
+         "email": "Will@mail.ru"},
+    ]
+    return templates.TemplateResponse(
+        request=request,
+        name="users.html",
+        context={"users": users}
+    )
 
 
-# 3.Создать 3 эндпоинта для get запросов,
-# которые возвращают словари. 1 возвращает данные которые прокидываются
-# в качестве path params название {item_id} тип int.
-# 2 возвращает данные переданные в качестве query params.
-# Имена произвольные двух типов int и str.
-# 3 возвращает 1 path params тип str и два query params тип int, int
-
-@app.get("/items/{item_id}")
-def get_path_params(
-        item_id: int
-) -> dict:
-    return {"item_id": item_id}
+# 5. Подключите статику к вашему проекту в файле main.
+# Создайте файл users.css и скачайте картинку с толпой людей.
+# Подключите файл users.css в шаблон users.html,  а также добавьте скачанную картинку.
 
 
-@app.get("/items")
-def get_query_params(
-        name: str,
-        item_id: int
-) -> dict:
-    return {
-        "item_id": item_id,
-        "name": name
-    }
-
-
-@app.get("/items/{name}")
-def get_path_query_params(
-        name: str,
-        item_id: int,
-        elem_id: int
-) -> dict:
-    return {
-        "item_id": item_id,
-        "name": name,
-        "elem_id": elem_id
-    }
-
-
-# 4.Используя pydantic создайте класс Actor c полями
-# (actor_id int, name str, surname str, age int, sex str)
-# Создайте эндпоинт c post запросом который принимает в body (actor: Actors).
-# и возвращает актёра с переданными полями в теле запроса.
-
-# 5.Используйте возможности pydantic и провалидируйте поля класса Actor
-# следующим образом: actor_id сделайте положительным числом,
-# age определите от 0 до 100,
-# name и surname сделайте не более 20 символов и не менее 2,
-# sex добавьте возможность выбора только male и female .
-
-class Actor(BaseModel):
-    actor_id: PositiveInt
-    name: str = Field(min_length=2, max_length=20)
-    surname: str = Field(min_length=2, max_length=20)
-    age: int = Field(ge=0, le=100)
-    sex: str = Field(..., choices=["male", "female"])
-
-
-@app.post("/actor", response_model=Actor)
-def get_actor() -> Actor:
-    actor_db = {
-        "actor_id": 1,
-        "name": "Brad",
-        "surname": "Pitt",
-        "age": 50,
-        "sex": "male"
-    }
-    actor = Actor(**actor_db)
-    return actor
+app.mount("/static", StaticFiles(directory="static"), name="static")
